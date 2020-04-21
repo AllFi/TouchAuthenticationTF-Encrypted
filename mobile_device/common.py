@@ -61,7 +61,15 @@ class LogisticRegression:
             with tf.name_scope("print-accuracy"):
                 correct_prediction = tf.equal(tf.round(y_hat), y)
                 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-                print_op = tf.print("Accuracy on {}:".format(data_owner.player_name), accuracy)
+
+                legitimate_count = tf.cast(tf.reduce_sum(y), tf.float32)
+                illegitimate_count = y.get_shape().as_list()[0] - legitimate_count
+                fp = tf.reduce_sum(tf.cast(tf.equal(tf.round(y_hat), y + 1), tf.float32))
+                fn = tf.reduce_sum(tf.cast(tf.equal(tf.round(y_hat) + 1, y), tf.float32))
+                far = fp / illegitimate_count
+                frr = fn / legitimate_count
+                print_op = tf.print("Accuracy on {}:".format(data_owner.player_name), accuracy,
+                                    "FAR:", far, "FRR:", frr, summarize=-1)
                 return print_op
 
         with tf.name_scope("evaluate"):
@@ -118,4 +126,4 @@ class ModelOwner:
     @tfe.local_computation
     def receive_weights(self, *weights):
         features_with_weights = {self.features[i]: weights[0][0][i][0] for i in range(len(self.features))}
-        return tf.print(features_with_weights)
+        return tf.print("Weights:", features_with_weights)
